@@ -1,5 +1,6 @@
 # ruigen
 A bunch of quick to include UI bits and pieces.
+Demo: http://quotum.herokuapp.com/ruigen
 ## How to use
 1. Include the JS file in a script tag on your page. 
 2. Create a div or other container with class='the_filename_of_the_js_you_want'. E.g. for hackertext have class="hackertext"
