@@ -28,15 +28,21 @@ bitsettings = {
     stripcount: 6
 }
 function startBitStream(){
-    $("canvas.bitstream").each((i, e) => {
+    $(".bitstream").each((i, _e) => {
+        e=document.createElement("canvas");
+        _e.append(e);
         e.width = 400;
         e.height = (bitsettings.chipsize + bitsettings.spacing) * bitsettings.stripcount;
+        //clear the screen on first run
+        _ctx=e.getContext('2d');
+        _ctx.fillStyle="black";
+        _ctx.fillRect(0, 0, 400,(bitsettings.chipsize + bitsettings.spacing) * bitsettings.stripcount);
         bitstreams.push({
             data: {
                 selfc: e,
                 pos: 0
             },
-            ctx: e.getContext('2d')
+            ctx: _ctx
         });
     });
     setInterval(() => {
@@ -52,7 +58,7 @@ function startBitStream(){
                 v.ctx.drawImage(v.data.selfc, bitsettings.chipsize + bitsettings.spacing,
                     0);
                 v.ctx.fillStyle = "black";
-                v.ctx.fillRect(0, bitsettings.chipsize, bitsettings.chipsize +
+                v.ctx.fillRect(0, 0, bitsettings.chipsize +
                     bitsettings.spacing, (bitsettings.chipsize + bitsettings.spacing) *
                     bitsettings.stripcount);
             }

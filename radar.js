@@ -22,7 +22,9 @@ JQInit(startRadar);
 
 function startRadar() {
     radars = [];
-    $("canvas.radar").each((i, e) => {
+    $(".radar").each((i, _e) => {
+        e=document.createElement("canvas");
+        _e.append(e);
         e.width = 400;
         e.height = 400;
         radars.push({

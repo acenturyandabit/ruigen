@@ -24,7 +24,9 @@ annipairSettings = {
     r: 2
 }
 function startAnniPairs(){
-    $("canvas.annipair").each((i, e) => {
+    $(".annipairs").each((i, _e) => {
+        e=document.createElement("canvas");
+        _e.append(e);
         e.width = 400;
         e.height = 100;
         annipair.push({

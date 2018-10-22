@@ -27,7 +27,9 @@ triflowsettings = {
     bitprob: 0.1
 }
 function startTriflow(){
-    $("canvas.triflow").each((i, e) => {
+    $(".triflow").each((i, _e) => {
+        e=document.createElement("canvas");
+        _e.append(e);
         e.width = 400;
         e.height = 200;
         triflow.push({

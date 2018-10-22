@@ -172,7 +172,6 @@ function startHackerText() {
             font-size: 15px;
             overflow: hidden;
             position: relative;
-            border: 2px solid green;
             background-color:black;
         }
 
