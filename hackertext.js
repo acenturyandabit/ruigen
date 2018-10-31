@@ -164,11 +164,9 @@ fakeCodeSettings = {
 function startHackerText() {
     $("head").append(`
     <style>
-        section.hackertext {
+        .hackertext {
             font-family: monospace;
             color: lightgreen;
-            height: 400px;
-            flex: 0 0 400px;
             font-size: 15px;
             overflow: hidden;
             position: relative;

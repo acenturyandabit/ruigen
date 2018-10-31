@@ -30,13 +30,15 @@ function startTriflow(){
     $(".triflow").each((i, _e) => {
         e=document.createElement("canvas");
         _e.append(e);
-        e.width = 400;
-        e.height = 200;
+        e.width = _e.clientWidth;
+        e.height = _e.clientHeight;
         triflow.push({
             data: {
                 bits: []
             },
-            ctx: e.getContext('2d')
+            ctx: e.getContext('2d'),
+            h:e.height,
+            w:e.width
         });
     });
     setInterval(() => {
@@ -45,15 +47,15 @@ function startTriflow(){
             if (Math.random() < triflowsettings.bitprob) {
                 v.data.bits.push({
                     x: -2 / triflowsettings.bitprob,
-                    c: 80 + Math.random() * 20,
-                    a: 45 + Math.random() * 15,
+                    c: e.clientHeight*(0.4 + Math.random() * 0.1),
+                    a: e.clientHeight*(0.2 + Math.random() * 0.05),
                     omg: 0.02 + Math.random() * 0.1,
                     phi: Math.random() * 2 * Math.PI
                 })
             }
             //clear screen
             v.ctx.fillStyle = "black";
-            v.ctx.fillRect(0, 0, 400, 200);
+            v.ctx.fillRect(0, 0, v.w,v.h);
             //Draw bits
             if (v.data.bits.length > 3) {
                 for (i = 2; i < v.data.bits.length; i++) {
@@ -78,7 +80,7 @@ function startTriflow(){
                 v.data.bits[i].phi += v.data.bits[i].omg;
                 v.data.bits[i].x++;
             }
-            while (v.data.bits.length && v.data.bits[0].x > 500) v
+            while (v.data.bits.length && v.data.bits[0].x > v.w) v
                 .data.bits.shift();
         })
     }, 100)

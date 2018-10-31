@@ -51,12 +51,13 @@ function startMatrixText() {
 </style>`)
     $(".matrixtext").each((i, e) => {
         matrixCanvas = document.createElement("canvas");
-        matrixCanvas.width = 400;
-        matrixCanvas.height = 400;
+        matrixCanvas.width = e.clientWidth;
+        matrixCanvas.height = e.clientHeight;
         e.appendChild(matrixCanvas);
         ctx = matrixCanvas.getContext('2d');
         matrixText.push({
             ctx: ctx,
+            e:matrixCanvas,
             data: {
                 streams: []
             }
@@ -66,20 +67,20 @@ function startMatrixText() {
         matrixText.forEach((v, i) => {
             //generate new line
             if (Math.random() < matrixTextSettings.frequency) {
-                strlens=Math.floor(Math.random()*20+10);
+                strlens=Math.floor(Math.random()*v.e.height/20+10);
                 basestr="";
                 for (i=0;i<strlens;i++)basestr+=getRand(matrixTextSettings.allowedChars);
                 v.data.streams.push({
                     genstep: 0,
                     finalLen: strlens,
                     rooty: 10,
-                    rootx: Math.floor(Math.random()*400),
+                    rootx: Math.floor(Math.random()*v.e.width),
                     size: Math.floor(Math.random()*15+10),
                     str: basestr
                 })
             }
             v.ctx.fillStyle="rgba(0,0,0,0.3)";
-            v.ctx.fillRect(0, 0, 400, 400);
+            v.ctx.fillRect(0, 0,v.e.width,v.e.height);
             v.data.streams.forEach((e, i) => {
                 //draw all residuals
                 undraw=true;

@@ -23,7 +23,6 @@ JQInit(startBitStream);
 ///////////////bitstream/////////
 bitstreams = [];
 bitsettings = {
-    chipsize: 15,
     spacing: 1,
     stripcount: 6
 }
@@ -31,36 +30,38 @@ function startBitStream(){
     $(".bitstream").each((i, _e) => {
         e=document.createElement("canvas");
         _e.append(e);
-        e.width = 400;
-        e.height = (bitsettings.chipsize + bitsettings.spacing) * bitsettings.stripcount;
+        e.width = _e.clientWidth;
+        e.height=_e.clientHeight;
+        //e.height = (v.chipsize + bitsettings.spacing) * bitsettings.stripcount;
         //clear the screen on first run
         _ctx=e.getContext('2d');
         _ctx.fillStyle="black";
-        _ctx.fillRect(0, 0, 400,(bitsettings.chipsize + bitsettings.spacing) * bitsettings.stripcount);
+        _ctx.fillRect(0, 0, e.clientWidth,e.clientHeight);
         bitstreams.push({
             data: {
                 selfc: e,
                 pos: 0
             },
-            ctx: _ctx
+            ctx: _ctx,
+            chipsize: e.height/bitsettings.stripcount-bitsettings.spacing,
+            h:e.height
         });
     });
     setInterval(() => {
         bitstreams.forEach((v, i) => {
             //Generate bit
             v.ctx.fillStyle = "rgb(0," + Math.floor(Math.random() * 255) + ",0)";
-            v.ctx.fillRect(bitsettings.spacing, (bitsettings.chipsize + bitsettings.spacing) *
-                v.data.pos + 1, bitsettings.chipsize, bitsettings.chipsize);
+            v.ctx.fillRect(bitsettings.spacing, (v.chipsize + bitsettings.spacing) *
+                v.data.pos + 1, v.chipsize, v.chipsize);
             v.data.pos++;
             //iterate
             if (v.data.pos == bitsettings.stripcount) {
                 v.data.pos = 0;
-                v.ctx.drawImage(v.data.selfc, bitsettings.chipsize + bitsettings.spacing,
+                v.ctx.drawImage(v.data.selfc, v.chipsize + bitsettings.spacing,
                     0);
                 v.ctx.fillStyle = "black";
-                v.ctx.fillRect(0, 0, bitsettings.chipsize +
-                    bitsettings.spacing, (bitsettings.chipsize + bitsettings.spacing) *
-                    bitsettings.stripcount);
+                v.ctx.fillRect(0, 0, v.chipsize +
+                    bitsettings.spacing, v.h);
             }
         })
     }, 100)

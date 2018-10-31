@@ -25,26 +25,30 @@ function startRadar() {
     $(".radar").each((i, _e) => {
         e=document.createElement("canvas");
         _e.append(e);
-        e.width = 400;
-        e.height = 400;
+        slen=_e.clientHeight;
+        if (slen>_e.clientWidth)slen=e.clientWidth;
+        e.width = _e.clientWidth;
+        e.height = _e.clientHeight;
         radars.push({
             data: {
-                r: 200,
+                r: slen/2,
                 t: 0
             },
-            ctx: e.getContext('2d')
+            ctx: e.getContext('2d'),
+            cx:e.width/2,
+            cy:e.height/2,
         });
     });
     setInterval(() => {
         radars.forEach((v, i) => {
             //sweep
             v.ctx.beginPath();
-            v.ctx.moveTo(200, 200);
-            v.ctx.lineTo(200 + v.data.r * Math.cos(v.data.t), 200 + v.data.r * Math.sin(
+            v.ctx.moveTo(v.cx, v.cy);
+            v.ctx.lineTo(v.cx + v.data.r * Math.cos(v.data.t), v.cy + v.data.r * Math.sin(
                 v.data.t));
-            v.ctx.arc(200, 200, v.data.r, v.data.t, v.data.t + 2);
+            v.ctx.arc(v.cx, v.cy, v.data.r, v.data.t, v.data.t + 2);
             v.data.t += 0.1;
-            v.ctx.lineTo(200, 200);
+            v.ctx.lineTo(v.cx, v.cy);
             v.ctx.strokeStyle = "green";
             v.ctx.stroke();
             v.ctx.fillStyle = "rgba(0,50,0,0.1)";
@@ -52,12 +56,12 @@ function startRadar() {
             v.ctx.closePath();
             //fading
             v.ctx.fillStyle = "rgba(0,0,0,0.1)";
-            v.ctx.fillRect(0, 0, 401, 401);
+            v.ctx.fillRect(0, 0, v.cx*2, v.cy*2);
             //plot points
             rth = Math.random() * 2 + v.data.t;
-            rr = Math.random() * 190;
+            rr = Math.random() * v.data.r*0.9;
             v.ctx.beginPath();
-            v.ctx.arc(200 + Math.cos(rth) * rr, 200 + Math.sin(rth) * rr, 5, 0, 2 *
+            v.ctx.arc(v.cx + Math.cos(rth) * rr, v.cy + Math.sin(rth) * rr, 5, 0, 2 *
                 Math.PI);
             v.ctx.fillStyle = "rgb(200,50,0)";
             v.ctx.fill();
