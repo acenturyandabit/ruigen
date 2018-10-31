@@ -28,7 +28,7 @@ function JQInit(_f) {
     }
 }
 
-JQInit(startHackerText);
+JQInit(startMatrixText);
 
 
 
@@ -44,7 +44,7 @@ matrixTextSettings = {
 
 
 
-function startHackerText() {
+function startMatrixText() {
     $("head").append(`
     <style>
         
