@@ -202,8 +202,10 @@ function startHackerText() {
         
 </style>`)
     $(".hackertext").each((i, e) => {
+        dv=document.createElement("div");
+        e.append(dv);
         fakeCode.push({
-            div: $(e).find("div")[0],
+            div: dv,
             data: {
                 indent: 0,
                 identifiers: [],
