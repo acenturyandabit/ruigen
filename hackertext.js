@@ -1,5 +1,3 @@
-
-
 ///helpful stuff///
 function getRand(arr) {
     if (arr && arr.length) {
@@ -8,7 +6,7 @@ function getRand(arr) {
     // The undefined will be returned if the empty array was passed
 }
 
-function JQInit(_f){
+function JQInit(_f) {
     if (typeof jQuery == 'undefined') {
         // preinject jquery so that noone else after us is going to
         //inject jquery
@@ -20,7 +18,9 @@ function JQInit(_f){
     if (typeof jQuery == 'string') {
         function tryStartJQ(f) {
             if (typeof jQuery != 'string' && typeof jQuery != 'undefined') f();
-            else setTimeout(()=>{tryStartJQ(f)}, 1000);
+            else setTimeout(() => {
+                tryStartJQ(f)
+            }, 1000);
         }
         document.addEventListener("ready", tryStartJQ(_f));
     } else {
@@ -104,7 +104,7 @@ fakeCodeSettings = {
     comparators: ['==', '>=', '<=', '>', '<', '!='],
     generators: [
         (v) => { //create identifier
-            if (v.data.identifiers.length > 10) return 1;
+            if (v.data.identifiers.length > v.rt.clientWidth / 40) return 1;
             let newID = fakeCodeSettings.identifiers[Math.floor(Math.random() * fakeCodeSettings
                 .identifiers
                 .length)];
@@ -133,7 +133,7 @@ fakeCodeSettings = {
                     ",") + ");";
             return k;
         }, (v) => { //create an if statement
-            if (v.data.indent > 2) return 1;
+            if (v.data.indent > v.rt.clientWidth / 150) return 1;
             let cid = getRand(v.data.identifiers);
             if (!cid) return 1;
             let other = fakeCodeSettings.genRID(v);
@@ -148,7 +148,7 @@ fakeCodeSettings = {
             k.innerText = "}"
             return k;
         }, (v) => { //Create a while loop
-            if (v.data.indent > 2) return 1;
+            if (v.data.indent > v.rt.clientWidth / 150) return 1;
             let cid = getRand(v.data.identifiers);
             if (!cid) return 1;
             let other = fakeCodeSettings.genRID(v);
@@ -200,33 +200,32 @@ function startHackerText() {
         
 </style>`)
     $(".hackertext").each((i, e) => {
-        dv=document.createElement("div");
+        dv = document.createElement("div");
         e.append(dv);
         fakeCode.push({
             div: dv,
+            rt: e,
             data: {
                 indent: 0,
                 identifiers: [],
             }
         });
     })
-    setInterval(() => {
-        fakeCode.forEach((v, i) => {
-            //generate entire lines at a time
-            //different options:
-            //generate a new identifier
-            while ((k = fakeCodeSettings.generators[Math.floor(Math.random() * fakeCodeSettings
-                    .generators
-                    .length)](v)) == 1);
-            k.style["margin-left"] = (v.data.indent * 20) + "px";
-            $(v.div).append(k);
-            if (v.data.post_indent) {
-                v.data.indent++;
-                v.data.post_indent = 0;
-            }
-            while ($(v.div).children().length > 60) {
-                $(v.div).find("span:lt(1)").remove();
-            }
-        });
-    }, 800)
+    fakeCode.forEach(propagateHack);
+}
+
+function propagateHack(v, i) {
+    while ((k = fakeCodeSettings.generators[Math.floor(Math.random() * fakeCodeSettings
+            .generators
+            .length)](v)) == 1);
+    k.style["margin-left"] = (v.data.indent * 20) + "px";
+    $(v.div).append(k);
+    if (v.data.post_indent) {
+        v.data.indent++;
+        v.data.post_indent = 0;
+    }
+    while ($(v.div).children().length > 60) {
+        $(v.div).find("span:lt(1)").remove();
+    }
+    setTimeout(()=>{propagateHack(v,i)},Math.log(k.innerHTML.length)*200+200);
 }
