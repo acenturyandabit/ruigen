@@ -38,7 +38,8 @@ function startTriflow(){
             },
             ctx: e.getContext('2d'),
             h:e.height,
-            w:e.width
+            w:e.width,
+            tick:0
         });
     });
     setInterval(() => {
@@ -47,11 +48,16 @@ function startTriflow(){
             if (Math.random() < triflowsettings.bitprob) {
                 v.data.bits.push({
                     x: -2 / triflowsettings.bitprob,
-                    c: e.clientHeight*(0.4 + Math.random() * 0.1),
+                    //c: e.clientHeight*(0.4 + Math.random() * 0.1),
+                    c:e.clientHeight/2,
                     a: e.clientHeight*(0.2 + Math.random() * 0.05),
-                    omg: 0.02 + Math.random() * 0.1,
+                    //a:e.clientHeight/4,
+                    //omg: 0.02 + Math.random() * 0.1,
+                    omg:0.07,
                     phi: Math.random() * 2 * Math.PI
+                    //phi: v.tick*0.01*Math.PI
                 })
+                //v.tick+=Math.random()*5;
             }
             //clear screen
             v.ctx.fillStyle = "black";

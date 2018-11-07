@@ -87,8 +87,10 @@ function startMatrixText() {
                 if (e.genstep >= 0) {
                     for (let j = 0; j < e.genstep; j++) {
                         v.ctx.fillStyle = "rgb(0," + Math.floor(j / (e.genstep + 1) * 255) + ",0)"
+                        v.ctx.fillStyle="green";
                         if (j==e.genstep-1) v.ctx.fillStyle = "white";
                         v.ctx.font=e.size +"px monospace";
+                        //if (v.ctx.fillStyle!="#008000")console.log(v.ctx.fillStyle);
                         v.ctx.fillText(e.str[j], e.rootx, e.rooty + j * e.size);
                         
                     }
