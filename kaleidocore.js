@@ -1,3 +1,24 @@
+/*
+kaleidoCoreSettings{
+  sinusoidal: true or false.
+  raidalScalingFactor: how much the shape dilates as it goes out. 10 is a nice number for phones.
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 function JQInit(_f) {
   if (typeof jQuery == "undefined") {
     // preinject jquery so that noone else after us is going to
@@ -54,7 +75,8 @@ var kaleidoCoreDefaultSettings = {
   colorGenerator: randcol,
   radialScalingFactor:0,
   backgroundFillColor:"black",
-  maxVertices:8
+  maxVertices:8,
+  radialAmplitude:1
 };
 var kaleidoCoreSettings;
 if (!kaleidoCoreSettings) kaleidoCoreSettings = kaleidoCoreDefaultSettings;
@@ -69,10 +91,10 @@ kaleidoCore = [];
 function shape(maxR, ramR) {
   this.factor = kaleidoCoreSettings.factor; //Math.round(Math.random()*2+3);//how many times it repeats
   this.tRate = (Math.random() * 2 - 1) * kaleidoCoreSettings.angularAmplitude; //rate of rotation
-  this.rRate = Math.random() * 4 + 1; //rate of radius increase
+  this.rRate = (Math.random() * 4 + 1) * kaleidoCoreSettings.radialAmplitude; //rate of radius increase
   //for sinusoidal radius
   if (kaleidoCoreSettings.sinusoidal) {
-    this.ram = (Math.random() * 0.5 + 0.5) * ramR;
+    this.ram = (Math.random() * 0.5 + 0.5) * ramR; // the radius at which the sin function peaks.
     this.rsin = 0; //term in the sin function for sinusoidal radius
   }
   //end sinusoidal radius
@@ -106,7 +128,8 @@ function startKaleidoCore() {
       data: {
         predisp: [],
         shapes: []
-      }
+      },
+      radius:Math.min(kaleidoCanvas.width, kaleidoCanvas.height)/2
     });
   });
   setInterval(() => {
@@ -115,7 +138,7 @@ function startKaleidoCore() {
       v.ctx.fillRect(0, 0, v.e.width, v.e.height);
       //make new shapes, in waves
       if (Math.random() * 1 < 0.15) {
-        v.data.shapes.push(new shape(30, v.e.height / 2));
+        v.data.shapes.push(new shape(30, v.radius));
       }
       /*
 			if (Math.random() * 3 < 1 && v.phase%100<50) {
