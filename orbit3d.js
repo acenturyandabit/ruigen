@@ -231,9 +231,10 @@ function randcol() {
 JQInit(startOrbit3d);
 var orbit3dDefaultSettings = {
   factor: 8,
-  angularAmplitude: 0.1,
+  angularAmplitude: 5,
   colorGenerator: randcol,
   radialScalingFactor: 0,
+  axialRotationFactor:0.03,
   backgroundFillColor: "black",
   maxVertices: 8,
   forceOrthogonality:true,
@@ -245,20 +246,24 @@ var orbit3dDefaultSettings = {
       this.rsin = 0; //term in the sin function for sinusoidal radius
     }
     //end sinusoidal radius
+    //axis theta and phi
     this.at=Math.random() * Math.PI;
     this.ap=Math.random() * Math.PI;
     this.axis=Vector.fromAngles(this.at,this.ap);
+    this.dat=Math.random() * orbit3dSettings.axialRotationFactor;
+    this.dap=Math.random() * orbit3dSettings.axialRotationFactor;
+    //end axis theta and phi
     this.rvector = new Vector(1, 0, 0); //change to random vector and then cross and normalise
     if (orbit3dSettings.forceOrthogonality){
       this.rvector=this.rvector.cross(this.axis).scaleTo(1);
     }
     this.r = Math.random() * ramR; //radius
-    this.t = Math.random() * Math.PI; //theta
+    this.dt = Math.random() * orbit3dSettings.angularAmplitude; //theta
     this.color = orbit3dSettings.colorGenerator(); //this color
     this.factor = orbit3dSettings.factor;
     var vt = Math.floor(Math.random() * (orbit3dSettings.maxVertices - 3) + 3); //number of vertices
     this.bits = [];
-    for (var i = 0; i < vt; i++) this.bits.push(new bit(maxR/5));
+    for (var i = 0; i < vt; i++) this.bits.push(new bit(maxR/3));
     this.bitT = 0; //bit theta for rotation
     //this.bitDt = (Math.random() * 2 - 1) * 0.01; // bit d theta
     this.bitDt = 0; // bit d theta
@@ -293,7 +298,7 @@ function startOrbit3d() {
       },
       radius: Math.min(orbit3dCanvas.width, orbit3dCanvas.height) / 2
     };
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 5; i++) {
       o3do.data.shapes.push(new orbit3dSettings.shape(o3do.radius, o3do.radius));
     }
     orbit3d.push(o3do);
@@ -310,7 +315,10 @@ function startOrbit3d() {
         }
         s.bitT += s.bitDt;
         // rotate the vector about the axis
-        s.rvector = Vector.rotate(s.axis, s.rvector, Math.PI / 180).scaleTo(
+        s.at+=s.dat;
+        s.ap+=s.dap;
+        s.axis=Vector.fromAngles(s.at,s.ap);
+        s.rvector = Vector.rotate(s.axis, s.rvector, s.dt*Math.PI / 180).scaleTo(
           s.r
         );
       }
