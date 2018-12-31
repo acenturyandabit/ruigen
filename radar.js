@@ -30,6 +30,7 @@ function startRadar() {
         e.width = _e.clientWidth;
         e.height = _e.clientHeight;
         radars.push({
+            e:e,
             data: {
                 r: slen/2,
                 t: 0,
@@ -97,6 +98,31 @@ function startRadar() {
                 v.ctx.fill();
                 v.ctx.closePath();
             }
+
+            //draw crosshairs and rings
+            v.ctx.beginPath();
+            v.ctx.arc(v.cx,v.cy,v.data.r*4/5,0,Math.PI*2);
+            v.ctx.strokeStyle = "#001100";
+            v.ctx.stroke();
+            v.ctx.closePath();
+            v.ctx.beginPath();
+            v.ctx.arc(v.cx,v.cy,v.data.r*3/5,0,Math.PI*2);
+            v.ctx.strokeStyle = "#003300";
+            v.ctx.stroke();
+            v.ctx.closePath();
+            v.ctx.beginPath();
+            v.ctx.arc(v.cx,v.cy,v.data.r*2/5,0,Math.PI*2);
+            v.ctx.strokeStyle = "#005500";
+            v.ctx.stroke();
+            v.ctx.closePath();
+            v.ctx.beginPath();
+            v.ctx.arc(v.cx,v.cy,v.data.r*1/5,0,Math.PI*2);
+            v.ctx.strokeStyle = "#007700";
+            v.ctx.stroke();
+            v.ctx.closePath();
+            v.ctx.fillStyle="#007700";
+            v.ctx.fillRect(0,v.e.height/2,v.e.width,1);
+            v.ctx.fillRect(v.e.width/2,0,1,v.e.height);
         })
     }, 100)
 }
