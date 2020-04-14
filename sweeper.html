@@ -35,22 +35,23 @@
                         break;
                     case 1:
                     case 3:
-                        if (Math.random()<0.5){state=state+2; state%=4;}
+                        if (Math.random()<0.2){state=state+2; state%=4;}
                         len=Math.floor((Math.random()*140+10)/(phases+1));
                         break;
                 }
             }else{
                 len--;
                 ctx.strokeStyle="green";
-                ctx.lineWidth=Math.floor(r/100);
+                ctx.lineWidth=Math.floor(r/20);
                 switch(state){
                     case 0:
                     case 2:
+                        let pr=r; 
                         r--;
                         r*=0.98;
                         for (let i=0;i<phases;i++){
                             ctx.beginPath();
-                            ctx.moveTo(c.width/2+(r+1)*Math.cos(t+i*2*Math.PI/phases),c.height/2+(r+1)*Math.sin(t+i*2*Math.PI/phases));
+                            ctx.moveTo(c.width/2+pr*Math.cos(t+i*2*Math.PI/phases),c.height/2+pr*Math.sin(t+i*2*Math.PI/phases));
                             ctx.lineTo(c.width/2+r*Math.cos(t+i*2*Math.PI/phases),c.height/2+r*Math.sin(t+i*2*Math.PI/phases));
                             ctx.stroke();
                             ctx.closePath();
@@ -76,8 +77,8 @@
                         break;
                 }
             }
-            ctx.fillStyle="rgba(0,0,0,0.1)";
-            if (!(tt%20))ctx.fillRect(0,0,c.width,c.height);
+            ctx.fillStyle=`rgba(0,0,0,${(tt%10<2)*0.05})`;
+            ctx.fillRect(0,0,c.width,c.height);
             tt++;
             requestAnimationFrame(move);
         }
