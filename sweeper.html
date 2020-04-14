@@ -7,84 +7,98 @@
 <body>
     <canvas></canvas>
     <script>
+        let mkPhase=()=>4;
+            //()=>Math.floor(Math.random() * 4) + 2
         let c = document.querySelector("canvas");
-        c.width=document.body.clientWidth;
-        c.height=document.body.clientHeight;
+        c.width = document.body.clientWidth;
+        c.height = document.body.clientHeight;
         let ctx = c.getContext('2d');
-        let r=200;
-        let t=0;
-        let state=0;
-        let len=0;
-        ctx.fillStyle="black";
+        let _itm = () => {
+            return {
+                r: Math.random() * Math.max(c.width, c.height) / 2,
+                t: Math.random() * Math.PI * 2,
+                state: 0,
+                len: 0,
+                phases: mkPhase() 
+            }
+        }
         let tt=0;
-        let phases=3;
-        ctx.fillRect(0,0,c.width,c.height);
-        let arcSegWidth=0.05;
-        function move(){
-            if (r<0){
-                r=Math.min(c.width,c.height)/2;
-                phases=Math.floor(Math.random()*4)+2;
-            }
-            if (!len){
-                state++;
-                state=state%4;
-                switch (state){
-                    case 0:
-                    case 2:
-                        len=Math.floor(Math.random()*20+2);
-                        break;
-                    case 1:
-                    case 3:
-                        if (Math.random()<0.2){state=state+2; state%=4;}
-                        len=Math.floor((Math.random()*140+10)/(phases+1));
-                        break;
+        let itms = [];
+        for (let i = 0; i < 5; i++)itms.push(_itm());
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, c.width, c.height);
+        let arcSegWidth = 0.05;
+        let innerScale=0.002;
+        function move() {
+            for (let i = 0; i < itms.length; i++) {
+                itms[i].r*=(1+2*innerScale);
+                if (itms[i].r <= 0) {
+                    itms[i].r = Math.max(c.width, c.height) / 2;
+                    itms[i].phases = mkPhase();
                 }
-            }else{
-                len--;
-                ctx.strokeStyle="green";
-                ctx.lineWidth=Math.floor(r/20);
-                switch(state){
-                    case 0:
-                    case 2:
-                        let pr=r; 
-                        r--;
-                        r*=0.98;
-                        for (let i=0;i<phases;i++){
-                            ctx.beginPath();
-                            ctx.moveTo(c.width/2+pr*Math.cos(t+i*2*Math.PI/phases),c.height/2+pr*Math.sin(t+i*2*Math.PI/phases));
-                            ctx.lineTo(c.width/2+r*Math.cos(t+i*2*Math.PI/phases),c.height/2+r*Math.sin(t+i*2*Math.PI/phases));
-                            ctx.stroke();
-                            ctx.closePath();
-                        }
-                        break;
-                    case 1:
-                        t+=arcSegWidth;
-                        for (let i=0;i<phases;i++){
-                            ctx.beginPath();
-                            ctx.arc(c.width/2,c.height/2,r,t+i*2*Math.PI/phases,t+i*2*Math.PI/phases-arcSegWidth,true);
-                            ctx.stroke();
-                            ctx.closePath();
-                        }
-                        break;
-                    case 3:
-                        t-=arcSegWidth;
-                        for (let i=0;i<phases;i++){
-                            ctx.beginPath();
-                            ctx.arc(c.width/2,c.height/2,r,t+i*2*Math.PI/phases,t+i*2*Math.PI/phases+arcSegWidth,false);
-                            ctx.stroke();
-                            ctx.closePath();
-                        }
-                        break;
+                if (!itms[i].len) {
+                    itms[i].state++;
+                    itms[i].state = itms[i].state % 4;
+                    switch (itms[i].state) {
+                        case 0:
+                        case 2:
+                            itms[i].len = Math.floor(Math.random() * 20 + 5);
+                            break;
+                        case 1:
+                        case 3:
+                            if (Math.random() < 0.2) { itms[i].state = itms[i].state + 2; itms[i].state %= 4; }
+                            itms[i].len = Math.floor((Math.random() * 140 + 10) / (itms[i].phases + 1));
+                            break;
+                    }
+                } else {
+                    itms[i].len--;
+                    ctx.strokeStyle = "green";
+                    ctx.lineWidth = Math.floor(itms[i].r / 20)+1;
+                    switch (itms[i].state) {
+                        case 0:
+                        case 2:
+                            let pr = itms[i].r;
+                            itms[i].r-=2;
+                            itms[i].r *= (0.98-2*innerScale);
+                            if (itms[i].r<0)itms[i].r=0;
+                            for (let j = 0; j < itms[i].phases; j++) {
+                                ctx.beginPath();
+                                ctx.moveTo(c.width / 2 + pr * Math.cos(itms[i].t + j * 2 * Math.PI / itms[i].phases), c.height / 2 + pr * Math.sin(itms[i].t + j * 2 * Math.PI / itms[i].phases));
+                                ctx.lineTo(c.width / 2 + itms[i].r * Math.cos(itms[i].t + j * 2 * Math.PI / itms[i].phases), c.height / 2 + itms[i].r * Math.sin(itms[i].t + j * 2 * Math.PI / itms[i].phases));
+                                ctx.stroke();
+                                ctx.closePath();
+                            }
+                            break;
+                        case 1:
+                            itms[i].t += arcSegWidth;
+                            for (let j = 0; j < itms[i].phases; j++) {
+                                ctx.beginPath();
+                                ctx.arc(c.width / 2, c.height / 2, itms[i].r, itms[i].t + j * 2 * Math.PI / itms[i].phases, itms[i].t + j * 2 * Math.PI / itms[i].phases - arcSegWidth, true);
+                                ctx.stroke();
+                                ctx.closePath();
+                            }
+                            break;
+                        case 3:
+                            itms[i].t -= arcSegWidth;
+                            for (let j = 0; j < itms[i].phases; j++) {
+                                ctx.beginPath();
+                                ctx.arc(c.width / 2, c.height / 2, itms[i].r, itms[i].t + j * 2 * Math.PI / itms[i].phases, itms[i].t + j * 2 * Math.PI / itms[i].phases + arcSegWidth, false);
+                                ctx.stroke();
+                                ctx.closePath();
+                            }
+                            break;
+                    }
                 }
             }
-            ctx.fillStyle=`rgba(0,0,0,${(tt%10<2)*0.05})`;
-            ctx.fillRect(0,0,c.width,c.height);
+            ctx.fillStyle = `rgba(0,0,0,${(tt % 5 < 2) * 0.05})`;
+            ctx.fillRect(0, 0, c.width, c.height);
             tt++;
+            ctx.drawImage(c,innerScale*c.width,innerScale*c.height,c.width*(1-2*innerScale),c.height*(1-2*innerScale),0,0,c.width,c.height);
             requestAnimationFrame(move);
         }
         requestAnimationFrame(move);
 
-        
+
     </script>
 </body>
 
