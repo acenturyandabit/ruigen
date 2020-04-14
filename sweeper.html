@@ -1,0 +1,90 @@
+<html>
+
+<head>
+
+</head>
+
+<body>
+    <canvas></canvas>
+    <script>
+        let c = document.querySelector("canvas");
+        c.width=document.body.clientWidth;
+        c.height=document.body.clientHeight;
+        let ctx = c.getContext('2d');
+        let r=200;
+        let t=0;
+        let state=0;
+        let len=0;
+        ctx.fillStyle="black";
+        let tt=0;
+        let phases=3;
+        ctx.fillRect(0,0,c.width,c.height);
+        let arcSegWidth=0.05;
+        function move(){
+            if (r<0){
+                r=Math.min(c.width,c.height)/2;
+                phases=Math.floor(Math.random()*4)+2;
+            }
+            if (!len){
+                state++;
+                state=state%4;
+                switch (state){
+                    case 0:
+                    case 2:
+                        len=Math.floor(Math.random()*20+2);
+                        break;
+                    case 1:
+                    case 3:
+                        if (Math.random()<0.5){state=state+2; state%=4;}
+                        len=Math.floor((Math.random()*140+10)/(phases+1));
+                        break;
+                }
+            }else{
+                len--;
+                ctx.strokeStyle="green";
+                ctx.lineWidth=Math.floor(r/100);
+                switch(state){
+                    case 0:
+                    case 2:
+                        r--;
+                        r*=0.98;
+                        for (let i=0;i<phases;i++){
+                            ctx.beginPath();
+                            ctx.moveTo(c.width/2+(r+1)*Math.cos(t+i*2*Math.PI/phases),c.height/2+(r+1)*Math.sin(t+i*2*Math.PI/phases));
+                            ctx.lineTo(c.width/2+r*Math.cos(t+i*2*Math.PI/phases),c.height/2+r*Math.sin(t+i*2*Math.PI/phases));
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
+                        break;
+                    case 1:
+                        t+=arcSegWidth;
+                        for (let i=0;i<phases;i++){
+                            ctx.beginPath();
+                            ctx.arc(c.width/2,c.height/2,r,t+i*2*Math.PI/phases,t+i*2*Math.PI/phases-arcSegWidth,true);
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
+                        break;
+                    case 3:
+                        t-=arcSegWidth;
+                        for (let i=0;i<phases;i++){
+                            ctx.beginPath();
+                            ctx.arc(c.width/2,c.height/2,r,t+i*2*Math.PI/phases,t+i*2*Math.PI/phases+arcSegWidth,false);
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
+                        break;
+                }
+            }
+            ctx.fillStyle="rgba(0,0,0,0.1)";
+            if (!(tt%20))ctx.fillRect(0,0,c.width,c.height);
+            tt++;
+            requestAnimationFrame(move);
+        }
+        requestAnimationFrame(move);
+
+        
+    </script>
+</body>
+
+</html>
