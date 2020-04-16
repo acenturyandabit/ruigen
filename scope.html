@@ -1,0 +1,548 @@
+<html>
+
+<head>
+    <script src="svg.min.js"></script>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        svg text {
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="overSVG"></div>
+    <div class="overlay"
+        style="position:absolute; height:100%; width:100%; background: rgba(0,0,0,0.5); color:white; text-align: center;display:flex; flex-direction: column;">
+        <div style="flex: 1 1 50%">
+
+        </div>
+        <div style="flex: 0 0 3em;">
+            <h1>Warning, the following instrument may be a bit weird and annoy the neighbours. Please use caution when
+                playing with it.</h1>
+            <button onclick="pp(); document.querySelector('.overlay').remove();">Ok</button>
+        </div>
+        <div style="flex: 1 1 50%">
+
+        </div>
+
+    </div>
+    <div style="display:flex; flex-direction:column; height:100%">
+        <div class="topbar" style="flex: 0 0 1em">
+            <a>Scope</a><a>Demos</a><a>Share</a>
+        </div>
+        <div class="main_content" style="display:flex;flex-direction:row; flex: 1 1 90%; width:100%;">
+            <div class="toolbar" style="background:lightgrey; flex: 0 0 200px;">
+                <h3>Click and drag to move things around.</h3>
+                <h3> Click and drag red handle outputs to connect/disconnect to black handle inputs.</h3>
+                <h3> You can change an item's properties by clicking it, then changing the inputs on the side.</h3>
+                <button onclick="var f=new blockTypes.sigGen.newfn(svg)">Add sigGen</button>
+                <button onclick="var f=new blockTypes.mult.newfn(svg)">Add multiplier</button>
+            </div>
+            <div class="table" style="flex: 1 1 50%;">
+            </div>
+
+            <div class="inspector" style="display:flex;flex-direction:row;flex: 1 0 300px; border: 1px solid black;">
+
+            </div>
+            <div class="scope" style="flex: 0 0 512px">
+                <canvas style="width:512px;height:512px"></canvas>
+                <button onclick="pp()">Play/Pause</button>
+                <button onclick="rso()">Resync oscillators</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        function htmlwrap(html, el) {
+            let d = document.createElement(el || 'div');
+            d.innerHTML = html;
+            if (d.children.length == 1) {
+                let dd = d.children[0];
+                dd.remove();
+                return dd;
+            }
+            else return d;
+        }
+
+        let auctx;
+
+        function getRelativeXY(x, y, svg, element) {
+            var p = svg.node.createSVGPoint();
+            var ctm = element.node.getCTM();
+            p.x = x + element.cx();
+            p.y = y + element.cy();
+            return p.matrixTransform(ctm);
+        }
+        let blockInstances=[];
+
+        function blockSVGController(blk, svgroot) {
+            blockInstances.push(blk);
+            blk.group = svgroot.group();
+            blk.rect = svgroot.rect(40, 40);
+            blk.group.add(blk.rect);
+            blk.text = svgroot.text(blk.name).fill('white');
+            blk.group.add(blk.text);
+            blk.group.move(Math.random() * 100, Math.random() * 100);
+            blk.group.click(() => {
+                if (document.querySelector(".inspector").children[0]) document.querySelector(".inspector").children[0].remove();
+                document.querySelector(".inspector").appendChild(blk.inspectorDiv);
+            })
+            let unpropagate = false;
+            blk.group.mousedown(() => {
+                if (!unpropagate) {
+                    table.movingBlock = blk;
+                }
+                unpropagate = false;
+            })
+            if (blk.inputHandles) {
+                //create a circle for each inputhandle
+                for (let i = 0; i < blk.inputHandles.length; i++) {
+                    let ii = i;
+                    blk.inputHandles[i].svgnode = svgroot.circle(10).move(-10, (1 + i) * 40 / (blk.inputHandles.length + 2));
+                    blk.group.add(blk.inputHandles[i].svgnode);
+                    blk.inputHandles[i].svgnode.mouseover(() => {
+                        if (table.lineStartBlock) {
+                            table.lineStartBlock.toggleConnect(blk, table.lineStartIndex, ii);
+                            handleTableMouseExit();
+                        }
+                    })
+                }
+            }
+            if (blk.outputHandles) {
+                //create a circle for each inputhandle
+                for (let i = 0; i < blk.outputHandles.length; i++) {
+                    let ti = i;
+                    blk.outputHandles[i].svgnode = svgroot.circle(10).move(40, (1 + i) * 40 / (blk.outputHandles.length + 2)).fill('red');
+                    blk.group.add(blk.outputHandles[i].svgnode);
+                    blk.outputHandles[i].svgnode.mousedown(() => {
+                        table.lineStartBlock = blk;
+                        table.lineStartIndex = ti; // this may become a problem once blocks have multiple outputs. Luckily this is designed so they dont.
+                        unpropagate = true;
+                    })
+                }
+            }
+
+            blk.toggleConnect = (otherBlock, outputIndex = 0, inputIndex = 0) => {
+                //connect this one's output to someone else's input
+                if (!blk.outputHandles[outputIndex].connections) {
+                    blk.outputHandles[outputIndex].connections = [];
+                } else {
+                    for (let i = 0; i < blk.outputHandles[outputIndex].connections.length; i++) {
+                        if (blk.outputHandles[outputIndex].connections[i].otherB == otherBlock && blk.outputHandles[outputIndex].connections[i].otherI == inputIndex) {
+                            //delete instead, and return
+                            let otherHandleSet = blk.outputHandles[outputIndex].connections[i].otherB.inputHandles[blk.outputHandles[outputIndex].connections[i].otherI];
+                            for (let j = 0; j < otherHandleSet.connections; j++) {
+                                if (otherHandleSet.connections[j].otherB == blk && otherHandleSet.connections[j].otherI == outputIndex) {
+                                    otherHandleSet.connections.splice(j, 1);
+                                }
+                            }
+                            blk.outputHandles[outputIndex].node.disconnect(blk.outputHandles[outputIndex].connections[i].otherB.inputHandles[blk.outputHandles[outputIndex].connections[i].otherI].node);
+                            blk.outputHandles[outputIndex].connections[i].line.remove();
+                            blk.outputHandles[outputIndex].connections.splice(i, 1);
+                            return;
+                        }
+                    }
+                }
+
+                if (!otherBlock.inputHandles[inputIndex].connections) {
+                    otherBlock.inputHandles[inputIndex].connections = [];
+                }
+
+                let lineStartPoint = getRelativeXY(0, 0, svgroot, blk.outputHandles[outputIndex].svgnode);
+                let lineEndPoint = getRelativeXY(0, 0, svgroot, otherBlock.inputHandles[inputIndex].svgnode);
+
+                let line = svgroot.line(lineStartPoint.x, lineStartPoint.y, lineEndPoint.x, lineEndPoint.y).stroke("black");
+
+                blk.outputHandles[outputIndex].connections.push({
+                    otherB: otherBlock,
+                    otherI: inputIndex,
+                    line: line,
+                    endNode: otherBlock.inputHandles[inputIndex].svgnode
+                })
+                otherBlock.inputHandles[inputIndex].connections.push({
+                    line: line,
+                    otherB: blk,
+                    otherI: outputIndex,
+                    startNode: blk.outputHandles[outputIndex].svgnode
+                })
+                blk.outputHandles[outputIndex].node.connect(otherBlock.inputHandles[inputIndex].node);
+            }
+            blk.redrawLines = () => {
+                if (blk.outputHandles) for (let oh of blk.outputHandles) {
+                    if (oh.connections) {
+                        for (cc of oh.connections) {
+                            let lineStartPoint = getRelativeXY(0, 0, svgroot, oh.svgnode);
+                            let lineEndPoint = getRelativeXY(0, 0, svgroot, cc.endNode);
+                            cc.line.plot(lineStartPoint.x, lineStartPoint.y, lineEndPoint.x, lineEndPoint.y);
+                        }
+                    }
+                }
+                if (blk.inputHandles) for (let oh of blk.inputHandles) {
+                    if (oh.connections) {
+                        for (cc of oh.connections) {
+                            let lineStartPoint = getRelativeXY(0, 0, svgroot, cc.startNode);
+                            let lineEndPoint = getRelativeXY(0, 0, svgroot, oh.svgnode);
+                            cc.line.plot(lineStartPoint.x, lineStartPoint.y, lineEndPoint.x, lineEndPoint.y);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        /*
+        - A new block type is added
+            - It is added to the toolbar
+        
+        - User drags a new block from the toolbar
+        - user lets go of the block on the toolbar
+        - user lets go of the block on the table
+
+        - On timer 
+        
+        
+        */
+        /************Block definitions***************/
+        let blockTypes = {
+            sink: { // Purely sinks an audio signal. Doesn't care if it's X or y. Add before sinking.
+                newfn: function (svgroot) {
+                    this.name = "sink";
+
+                    //outside rect
+                    //name
+                    //inputHandles
+                    this.canvas = document.querySelector("canvas");
+                    this.canvas.width = 512;
+                    this.canvas.height = 512;
+                    this.ctx = this.canvas.getContext('2d');
+                    this.audioNode = auctx.createGain();
+                    this.splitter = auctx.createChannelSplitter(2);
+                    this.lanz = auctx.createAnalyser();
+                    this.ranz = auctx.createAnalyser();
+                    this.splitter.connect(this.lanz, 0);
+                    this.splitter.connect(this.ranz, 1);
+                    this.audioNode.connect(auctx.destination);
+                    this.audioNode.connect(this.splitter);
+                    this.lanz.fftSize = 2048;//half of 4096.
+                    this.ranz.fftSize = 2048;//half of 4096.
+                    var ldarr = new Uint8Array(2048);
+                    var rdarr = new Uint8Array(2048);
+                    this.ctx.strokeStyle = "rgba(255,255,255,0.2)";
+                    this.ctx.fillStyle = "rgba(0,0,0,0.1)";
+                    this.tick = () => {
+                        this.ctx.fillRect(0, 0, 1000, 1000);
+                        this.lanz.getByteTimeDomainData(ldarr);
+                        this.ranz.getByteTimeDomainData(rdarr);
+                        this.ctx.beginPath();
+                        for (var i = 0; i < 2048; i++) {
+                            if (i === 0) {
+                                this.ctx.moveTo(ldarr[i], rdarr[i]);
+                            } else {
+                                this.ctx.lineTo(ldarr[i], rdarr[i]);
+                            }
+                        }
+                        this.ctx.closePath();
+                        this.ctx.stroke();
+                    }
+                    this.inputHandles = [
+                        {
+                            node: this.audioNode
+                        }
+                    ];
+                    this.inspectorDiv = htmlwrap(
+                        `<div>
+                            <h1>Sink block</h1>
+                            <label><input type="range" name="persistence" min='0' max='0.3' step='0.01'></input>Persistence</label>
+                        </div>`
+                    )
+                    this.inspectorDiv.querySelector(`[name='persistence']`).addEventListener('input', (e) => {
+                        this.ctx.fillStyle = `rgba(0,0,0,${e.target.value})`;
+                    })
+                    blockSVGController(this, svgroot);
+                },
+                deletable: false
+            },
+            pan: {
+                newfn: function (svgroot) {
+                    this.name = "select";
+                    //inputHandles
+                    this.splitter = auctx.createChannelSplitter(2);
+                    this.merger = auctx.createChannelMerger(2);
+                    this.mute = auctx.createConstantSource();
+                    let prevChannel = 0;
+                    this.splitter.connect(this.merger, 0, 0);
+                    this.mute.connect(this.merger, 0, 1);
+                    //access using this.audioNode.pan.value
+                    this.inputHandles = [
+                        {
+                            node: this.splitter
+                        }
+                    ];
+                    this.outputHandles = [
+                        {
+                            node: this.merger
+                        }
+                    ];
+                    this.inspectorDiv = htmlwrap(
+                        `<div>
+                            <label>Select channel
+                                <select>
+                                    <option value='0'>x</option>
+                                    <option value='1'>y</option>
+                                </select>
+                            </label>
+                        </div>`
+                    );
+                    this.inspectorDiv.querySelector('select').addEventListener('change', (e) => {
+                        let channel = Number(e.target.value);
+                        this.setChannel(channel);
+                    });
+                    this.setChannel = (channel) => {
+                        this.text.text('Select \n' + (channel ? 'y' : 'x'));
+                        this.inspectorDiv.querySelector('select').value = channel;
+                        this.splitter.disconnect(this.merger, 0, prevChannel);
+                        this.mute.disconnect(this.merger, 0, (1 - prevChannel));
+
+                        this.splitter.connect(this.merger, 0, channel);
+                        this.mute.connect(this.merger, 0, (1 - channel));
+                        prevChannel = channel;
+                    }
+                    blockSVGController(this, svgroot);
+                }
+            },
+            arFn: {
+                newfn: function (svgroot) {
+                    this.name = "mult";
+                    //inputHandles
+                    this.gainNode = auctx.createGain();
+                    this.outputHandles = [
+                        {
+                            node: this.gainNode
+                        }
+                    ];
+                    this.inputHandles = [
+                        {
+                            node: this.gainNode
+                        },
+                        {
+                            node: this.gainNode.gain
+                        }
+                    ];
+                    this.inspectorDiv = htmlwrap(
+                        `<div>
+                            <h1>Multiplier</h1>
+                            <p>No settings</p>
+                        </div>`
+                    )
+                    blockSVGController(this, svgroot);
+                }
+            },
+            fromFile: {},
+            mult: {
+                newfn: function (svgroot) {
+                    this.name = "mult";
+                    //inputHandles
+                    this.gainNode = auctx.createGain();
+                    this.outputHandles = [
+                        {
+                            node: this.gainNode
+                        }
+                    ];
+                    this.inputHandles = [
+                        {
+                            node: this.gainNode
+                        },
+                        {
+                            node: this.gainNode.gain
+                        }
+                    ];
+                    this.inspectorDiv = htmlwrap(
+                        `<div>
+                            <h1>Multiplier</h1>
+                            <p>No settings</p>
+                        </div>`
+                    )
+                    blockSVGController(this, svgroot);
+                }
+            },
+            sigGen: {
+                newfn: function (svgroot) {
+                    this.name = "sine";
+                    //inputHandles
+                    this.audioNode = new OscillatorNode(auctx);
+                    this.type=this.audioNode.type = "sine";
+                    this.freq=440;
+                    this.phase=0;
+                    this.audioNode.frequency.setValueAtTime(440, auctx.currentTime); // value in hertz
+                    this.gainNode = auctx.createGain();
+                    this.passthru = auctx.createGain();
+                    this.audioNode.connect(this.gainNode);
+                    this.gainNode.connect(this.passthru);
+                    this.offsetNode = auctx.createConstantSource();
+                    this.offsetNode.connect(this.passthru);
+                    this.offsetNode.offset.value = 0;
+                    this.offsetNode.start();
+                    this.audioNode.start();
+                    this.outputHandles = [
+                        {
+                            node: this.passthru
+                        }
+                    ];
+                    this.resetOscillator=(t)=>{
+                        this.audioNode.stop();
+                        this.audioNode = new OscillatorNode(auctx);
+                        this.audioNode.connect(this.gainNode);
+                        this.audioNode.frequency.value=this.freq;
+                        this.audioNode.type=this.type;
+                        this.audioNode.start(t+1/this.freq*this.phase);
+                    }
+                    this.inspectorDiv = htmlwrap(
+                        `<div>
+                            <h1>Signal generator block</h1>
+                            <label>Signal type
+                                <select>
+                                    <option value='sine'>sine</option>
+                                    <option value='square'>square</option>
+                                    <option value='triangle'>triangle</option>
+                                    <option value='sawtooth'>sawtooth</option>
+                                    <option>custom [DOESNT WORK YET]</option>
+                                </select>    
+                            </label>
+                            <label>Frequency
+                                <input type="number" name='frequency' value='440'></input>
+                            </label>
+                            <label>Amplitude
+                                <input type="number" name='amplitude' value='1'></input>
+                            </label>
+                            <label>Centre
+                                <input type="number" name='centre' value='0'></input>
+                            </label>
+                            <label>Phase offset on resync
+                                <input type="number" name='phase' value='0'></input>
+                            </label>
+                        </div>`
+                    )
+                    this.inspectorDiv.querySelector("select").addEventListener("change", (e) => {
+                        this.audioNode.type = e.target.value;
+                        this.type=e.target.value;
+                    });
+                    this.inspectorDiv.querySelector(`[name="frequency"]`).addEventListener("input", (e) => {
+                        this.audioNode.frequency.value = e.target.value;
+                        this.freq=e.target.value;
+                    })
+                    this.inspectorDiv.querySelector(`[name="amplitude"]`).addEventListener("input", (e) => {
+                        this.gainNode.gain.value = e.target.value;
+                    })
+                    this.inspectorDiv.querySelector(`[name="centre"]`).addEventListener("input", (e) => {
+                        this.offsetNode.offset.value = e.target.value;
+                    })
+                    this.inspectorDiv.querySelector(`[name="phase"]`).addEventListener("input", (e) => {
+                        this.phase = e.target.value;
+                    })
+                    blockSVGController(this, svgroot);
+                }
+            }
+        }
+
+        let svg = SVG(document.querySelector(".table"));
+        let auctxState = true;
+
+        function getSVGCoords(pageX, pageY, vb) {
+            let rels = svg.node.getBoundingClientRect();
+            if (!vb) vb = svg.viewbox();
+            let ret = {};
+            ret.x = (pageX - rels.x) / rels.width * vb.width + vb.x;
+            ret.y = (pageY - rels.y) / rels.height * vb.height + vb.y;
+            return ret;
+        }
+
+
+        let table = {};
+
+        document.querySelector(".table").addEventListener('mousemove', (e) => {
+            if (table.movingBlock) {
+                let basecoords = getSVGCoords(e.pageX, e.pageY);
+                table.movingBlock.group.cx(basecoords.x).cy(basecoords.y);
+                table.movingBlock.redrawLines();
+            } else if (table.lineStartBlock) {
+                let basecoords = getSVGCoords(e.pageX, e.pageY);
+                let otherpoint = getRelativeXY(0, 0, svg, table.lineStartBlock.outputHandles[table.lineStartIndex].svgnode)
+                if (!table.tempLine) {
+                    table.tempLine = svg.line(otherpoint.x, otherpoint.y, basecoords.x, basecoords.y).stroke('red');
+                } else {
+                    table.tempLine.plot(otherpoint.x, otherpoint.y, basecoords.x, basecoords.y);
+                }
+            }
+        })
+
+        function handleTableMouseExit() {
+            table.movingBlock = undefined;
+            if (table.lineStartBlock) {
+                table.tempLine.plot(0, 0, 0, 0);
+            }
+            table.lineStartBlock = undefined;
+        }
+
+        document.querySelector(".table").addEventListener('mouseup', handleTableMouseExit);
+        document.querySelector(".table").addEventListener('mouseleave', handleTableMouseExit)
+
+        function pp() {
+            if (!auctx) {
+                auctx = new AudioContext();
+                let b1 = new blockTypes.sigGen.newfn(svg);
+                let b2 = new blockTypes.sigGen.newfn(svg);
+                let b3 = new blockTypes.pan.newfn(svg);
+                let b4 = new blockTypes.pan.newfn(svg);
+                let b5 = new blockTypes.sink.newfn(svg);
+                let b6 = new blockTypes.sigGen.newfn(svg);
+                b1.toggleConnect(b3);
+                b2.toggleConnect(b4);
+                b3.toggleConnect(b5);
+                b4.toggleConnect(b5);
+                b3.setChannel(1);
+                b4.setChannel(0);
+                b1.group.cx(100).cy(100);
+                b2.group.cx(100).cy(600);
+                b3.group.cx(300).cy(100);
+                b4.group.cx(300).cy(600);
+                b5.group.cx(600).cy(350);
+                b1.redrawLines();
+                b2.redrawLines();
+                b3.redrawLines();
+                b4.redrawLines();
+                b5.redrawLines();
+                let f = () => {
+                    b5.tick();
+                    requestAnimationFrame(f);
+                }
+                f();
+            } else {
+                if (auctxState) auctx.suspend();
+                else auctx.resume();
+                auctxState = !auctxState;
+
+            }
+        }
+
+        function rso(){
+            for (let i of blockInstances){
+                if (i.resetOscillator)i.resetOscillator(auctx.currentTime+0.1);
+            }
+        }
+
+
+
+
+    </script>
+</body>
+
+</html>

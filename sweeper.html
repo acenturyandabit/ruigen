@@ -17,6 +17,7 @@
             return {
                 r: Math.random() * Math.max(c.width, c.height) / 2,
                 t: Math.random() * Math.PI * 2,
+                col: 'hsla(' + Math.random() * 360 + ',100%,50%,1)',
                 state: 0,
                 len: 0,
                 phases: mkPhase() 
@@ -52,7 +53,7 @@
                     }
                 } else {
                     itms[i].len--;
-                    ctx.strokeStyle = "green";
+                    ctx.strokeStyle = /*"green"*/ itms[i].col;
                     ctx.lineWidth = Math.floor(itms[i].r / 20)+1;
                     switch (itms[i].state) {
                         case 0:
